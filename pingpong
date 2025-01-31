@@ -3,10 +3,6 @@ import sys
 import random
 import math
 import time
-from pygame.locals import*
-
-
-img = pygame.image.load('cat.png')
 
 # Инициализация Pygame
 pygame.init()
@@ -345,7 +341,6 @@ def game_loop(mode):
             game_over = True
             break
         screen.fill(TABLE_BLUE)
-        #screen.blit(img, (0, 0))
 
         # Рисуем ракетки и мяч.
         pygame.draw.rect(screen, PADDLE_RED, (player1_x, player1_y, paddle_width, paddle_height))
@@ -379,7 +374,6 @@ def game_loop(mode):
         game_over_text = game_over_font.render("Игра окончена", True, WHITE)
         winner_text = game_over_font.render(f"Победитель: {'Игрок 1' if score1 > score2 else 'Игрок 2'}", True, WHITE)
         screen.fill(TABLE_BLUE)
-        #screen.blit(img, (0, 0))
 
         screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height()))
         screen.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 + 10))
