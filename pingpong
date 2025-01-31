@@ -1,13 +1,22 @@
 import pygame
 import sys
 import random
+import math
+import time
+from pygame.locals import*
 
+
+img = pygame.image.load('cat.png')
+
+# Инициализация Pygame
 pygame.init()
 
+clock = pygame.time.Clock()
+
 # Настройки экрана
-WIDTH, HEIGHT = 800, 600  # Увеличена высота до 650
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Ping Pong")
+WIDTH, HEIGHT = 1000, 600
+screen = pygame.display.set_mode((int(WIDTH), int(HEIGHT)))
+pygame.display.set_caption("Main Menu")
 
 # Цвета
 WHITE = (255, 255, 255)
@@ -17,14 +26,25 @@ LIGHT_GREY = (200, 200, 200)
 HOVER_GREY = (150, 150, 150)
 BUTTON_BORDER = (50, 50, 50)
 BUTTON_BACKGROUND = LIGHT_GREY
+TABLE_BLUE = (0, 0, 128)  # Синий цвет для стола
+PADDLE_RED = (255, 0, 0)  # Красный цвет для ракеток
+LINE_GRAY = (200, 200, 200)  # Серый цвет для центральной линии
 
 # Настройки мяча
 ball_size = 20
 ball_x = WIDTH // 2
 ball_y = HEIGHT // 2
-ball_speed_x = 7
-ball_speed_y = 7
-acceleration = 0.5  # Величина ускорения при каждом ударе
+ball_speed = 7  # Скорость мяча
+acceleration = 10  # Величина ускорения при каждом ударе
+
+# Функция для установки начальной скорости мяча
+def set_ball_velocity():
+    angle = math.radians(random.randrange(-60, 60))
+    ball_speed_x = ball_speed * math.cos(angle)
+    ball_speed_y = ball_speed * math.sin(angle)
+    return ball_speed_x, ball_speed_y
+
+ball_speed_x, ball_speed_y = set_ball_velocity()
 
 # Настройки ракеток
 paddle_width = 10
@@ -36,13 +56,89 @@ player2_y = HEIGHT // 2 - paddle_height // 2
 paddle_speed = 10
 score1 = 0
 score2 = 0
+
+# Шрифты
 font = pygame.font.Font(None, 74)
 game_over_font = pygame.font.Font(None, 100)
 pause_font = pygame.font.Font(None, 50)
 button_font = pygame.font.Font(None, 40)  # Уменьшенный шрифт для кнопок
 clock = pygame.time.Clock()
 
-# Функция для отображения меню
+# Функция для отображения главного меню
+def main_menu():
+    menu = True
+    selected = None  # Выбранный пункт меню
+    while menu:
+        screen.fill(BLACK)
+        title = font.render("Выберите игру", True, WHITE)
+        screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
+
+        option1_text = "1. Block Blast"
+        option1 = button_font.render(option1_text, True, WHITE if selected != 1 else GREY)
+        option1_rect = option1.get_rect(topleft=(WIDTH // 2 - option1.get_width() // 2, 250))
+        screen.blit(option1, option1_rect)
+
+        option2_text = "2. Ping Pong"
+        option2 = button_font.render(option2_text, True, WHITE if selected != 2 else GREY)
+        option2_rect = option2.get_rect(topleft=(WIDTH // 2 - option2.get_width() // 2, 350))
+        screen.blit(option2, option2_rect)
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEMOTION:
+                mouse_pos = event.pos
+                if option1_rect.collidepoint(mouse_pos):
+                    selected = 1
+                elif option2_rect.collidepoint(mouse_pos):
+                    selected = 2
+                else:
+                    selected = None
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Левый клик
+                    if option1_rect.collidepoint(event.pos):
+                        menu = False
+                        return "block_blast"
+                    if option2_rect.collidepoint(event.pos):
+                        menu = False
+                        return "ping_pong"
+
+        clock.tick(60)
+
+# Функция для запуска Block Blast (заглушка)
+def block_blast():
+    # Здесь должен быть код для игры Block Blast
+    # Пока что просто выводим сообщение и возвращаемся в главное меню
+    menu = True
+    while menu:
+        screen.fill(BLACK)
+        text = font.render("Block Blast", True, WHITE)
+        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    menu = False
+                    return "main_menu"
+
+        clock.tick(60)
+
+# Функция для запуска Ping Pong
+def ping_pong():
+    mode = show_menu()
+    if mode == "main_menu":
+        return "main_menu"
+    else:
+        game_loop(mode)
+
+# Функция для отображения меню игры в пинг-понг
 def show_menu():
     menu = True
     selected = None  # Выбранный пункт меню
@@ -52,12 +148,12 @@ def show_menu():
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
 
         option1_text = "1. С компьютером"
-        option1 = font.render(option1_text, True, WHITE if selected != 1 else GREY)
+        option1 = button_font.render(option1_text, True, WHITE if selected != 1 else GREY)
         option1_rect = option1.get_rect(topleft=(WIDTH // 2 - option1.get_width() // 2, 250))
         screen.blit(option1, option1_rect)
 
         option2_text = "2. Против друга"
-        option2 = font.render(option2_text, True, WHITE if selected != 2 else GREY)
+        option2 = button_font.render(option2_text, True, WHITE if selected != 2 else GREY)
         option2_rect = option2.get_rect(topleft=(WIDTH // 2 - option2.get_width() // 2, 350))
         screen.blit(option2, option2_rect)
 
@@ -86,7 +182,7 @@ def show_menu():
 
         clock.tick(60)
 
-# Основной игровой цикл
+# Основной игровой цикл для пинг-понга
 def game_loop(mode):
     global player1_y, player2_y, score1, score2, ball_x, ball_y, ball_speed_x, ball_speed_y
     paused = False
@@ -104,7 +200,16 @@ def game_loop(mode):
     resume_button_rect = pygame.Rect(WIDTH // 2 - 120, HEIGHT // 2 - 60, 240, 50)
     main_menu_button_rect = pygame.Rect(WIDTH // 2 - 120, HEIGHT // 2 + 10, 240, 50)
 
+    # Переменные для ошибки компьютера
+    last_error_time = time.time()
+    error_interval = 3  # Интервал ошибки в секундах
+    error_duration = 0.5  # Длительность ошибки в секундах
+    in_error = False
+
     while True:
+        current_time = time.time()
+        error_chance = random.randint(1, 2)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -127,14 +232,13 @@ def game_loop(mode):
             pause_display_text = pause_font.render("Пауза", True, WHITE)
             screen.blit(pause_display_text, (WIDTH // 2 - pause_display_text.get_width() // 2, HEIGHT // 2 - 150))
 
-            '''# Отображение кнопки "Возобновить игру"
+            # Отображение кнопок паузы
             resume_text = button_font.render("Возобновить игру", True, BLACK, BUTTON_BACKGROUND)
             resume_text_rect = resume_text.get_rect(center=resume_button_rect.center)
             pygame.draw.rect(screen, BUTTON_BACKGROUND, resume_button_rect)
             screen.blit(resume_text, resume_text_rect)
             pygame.draw.rect(screen, BUTTON_BORDER, resume_button_rect, 2)  # Граница толщиной 2 пикселя
 
-            # Отображение кнопки "Выйти в главное меню"
             main_menu_text = button_font.render("Выйти в главное меню", True, BLACK, BUTTON_BACKGROUND)
             main_menu_text_rect = main_menu_text.get_rect(center=main_menu_button_rect.center)
             pygame.draw.rect(screen, BUTTON_BACKGROUND, main_menu_button_rect)
@@ -151,7 +255,7 @@ def game_loop(mode):
             if main_menu_button_rect.collidepoint(mouse_pos):
                 pygame.draw.rect(screen, HOVER_GREY, main_menu_button_rect, 2)
             else:
-                pygame.draw.rect(screen, BUTTON_BORDER, main_menu_button_rect, 2)'''
+                pygame.draw.rect(screen, BUTTON_BORDER, main_menu_button_rect, 2)
 
             pygame.display.flip()
             continue  # Пропускаем остальную часть цикла, пока игра на паузе
@@ -165,10 +269,26 @@ def game_loop(mode):
 
         # Управление для компьютера или игрока 2
         if mode == "computer":
-            if player2_y + paddle_height // 2 < ball_y:
-                player2_y += paddle_speed
-            elif player2_y + paddle_height // 2 > ball_y:
-                player2_y -= paddle_speed
+            if not in_error:
+                # Проверка на ошибку
+                if current_time - last_error_time >= error_interval and error_chance == 2:
+                    in_error = True
+                    last_error_time = current_time
+                    # Изменяем направление движения компьютера на противоположное
+                    if player2_y + paddle_height // 2 < ball_y:
+                        player2_y -= paddle_speed
+                    else:
+                        player2_y += paddle_speed
+                else:
+                    # Нормальное движение компьютера
+                    if player2_y + paddle_height // 2 < ball_y:
+                        player2_y += paddle_speed
+                    elif player2_y + paddle_height // 2 > ball_y:
+                        player2_y -= paddle_speed
+            else:
+                # Проверка, закончилась ли ошибка
+                if current_time - last_error_time >= error_duration:
+                    in_error = False
         else:
             # Управление игроком 2
             if keys[pygame.K_UP] and player2_y > 0:
@@ -187,16 +307,23 @@ def game_loop(mode):
         if ball_y <= 0 or ball_y >= HEIGHT - 20:
             ball_speed_y *= -1
 
-        # Отскок мяча от ракеток и ускорение при столкновении с ними.
         # Проверка столкновения с ракеткой игрока 1 (левая)
         if (player1_x - 5 < ball_x < player1_x + paddle_width + 5) and (player1_y - 5 < ball_y < player1_y + paddle_height + 5):
-            ball_speed_x *= -1
+            angle = math.atan2(ball_speed_y, ball_speed_x)
+            angle += math.radians(random.randint(-80, 80)) # Изменение угла на 0-10 градусов
+            ball_speed_x = ball_speed * math.cos(angle)
+            ball_speed_y = ball_speed * math.sin(angle)
+            ball_speed_x *= -1  # Отражение по оси X
             ball_speed_x += acceleration if ball_speed_x > 0 else -acceleration
             ball_x = player1_x + paddle_width + 5  # Корректируем позицию мяча
 
         # Проверка столкновения с ракеткой игрока 2 (правая)
         if (player2_x - 5 < ball_x + ball_size < player2_x + paddle_width + 5) and (player2_y - 5 < ball_y < player2_y + paddle_height + 5):
-            ball_speed_x *= -1
+            angle = math.atan2(ball_speed_y, ball_speed_x)
+            angle += math.radians(random.randint(-80, 80))  # Изменение угла на 0-10 градусов
+            ball_speed_x = ball_speed * math.cos(angle)
+            ball_speed_y = ball_speed * math.sin(angle)
+            ball_speed_x *= -1  # Отражение по оси X
             ball_speed_x += acceleration if ball_speed_x > 0 else -acceleration
             ball_x = player2_x - ball_size - 5  # Корректируем позицию мяча
 
@@ -204,29 +331,29 @@ def game_loop(mode):
         if ball_x <= 0:
             score2 += 1
             ball_x, ball_y = WIDTH // 2, HEIGHT // 2
-            ball_speed_x = -7  # Меняем направление мяча при сбросе.
-            ball_speed_y = random.choice([-7, 7])  # Случайное направление по Y.
+            ball_speed_x, ball_speed_y = set_ball_velocity()
+            ball_speed_x = -ball_speed_x  # Меняем направление мяча при сбросе.
 
         if ball_x >= WIDTH:
             score1 += 1
             ball_x, ball_y = WIDTH // 2, HEIGHT // 2
-            ball_speed_x = 7  # Меняем направление мяча при сбросе.
-            ball_speed_y = random.choice([-7, 7])  # Случайное направление по Y.
+            ball_speed_x, ball_speed_y = set_ball_velocity()
+            ball_speed_x = ball_speed_x  # Меняем направление мяча при сбросе.
 
         # Проверка на окончание игры
         if score1 >= 11 or score2 >= 11:
             game_over = True
             break
-
-        screen.fill(BLACK)
+        screen.fill(TABLE_BLUE)
+        #screen.blit(img, (0, 0))
 
         # Рисуем ракетки и мяч.
-        pygame.draw.rect(screen, WHITE, (player1_x, player1_y, paddle_width, paddle_height))
-        pygame.draw.rect(screen, WHITE, (player2_x, player2_y, paddle_width, paddle_height))
+        pygame.draw.rect(screen, PADDLE_RED, (player1_x, player1_y, paddle_width, paddle_height))
+        pygame.draw.rect(screen, PADDLE_RED, (player2_x, player2_y, paddle_width, paddle_height))
         pygame.draw.ellipse(screen, WHITE, (ball_x, ball_y, ball_size, ball_size))
 
         # Рисуем центральную линию.
-        pygame.draw.aaline(screen, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
+        pygame.draw.aaline(screen, LINE_GRAY, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
 
         # Отображение счета.
         text1 = font.render(str(score1), True, WHITE)
@@ -246,27 +373,32 @@ def game_loop(mode):
             pygame.draw.rect(screen, BUTTON_BORDER, pause_button_rect, 3)
 
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(100)
 
-    # Отображение сообщения о конце игры
-    game_over_text = game_over_font.render("Игра окончена", True, WHITE)
-    winner_text = game_over_font.render(f"Победитель: {'Игрок 1' if score1 > score2 else 'Игрок 2'}", True, WHITE)
-    screen.fill(BLACK)
-    screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height()))
-    screen.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 + 10))
-    pygame.display.flip()
-    pygame.time.delay(5000)  # Пауза на 5 секунды перед выходом
+    while True:
+        game_over_text = game_over_font.render("Игра окончена", True, WHITE)
+        winner_text = game_over_font.render(f"Победитель: {'Игрок 1' if score1 > score2 else 'Игрок 2'}", True, WHITE)
+        screen.fill(TABLE_BLUE)
+        #screen.blit(img, (0, 0))
 
-    pygame.quit()
-    sys.exit()
+        screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height()))
+        screen.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 + 10))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
 # Запуск меню и игры.
 def main():
-    mode = show_menu()
-    if mode == "main_menu":
-        show_menu()
-    else:
-        game_loop(mode)
+    while True:
+        mode = main_menu()
+        if mode == "main_menu":
+            continue
+        elif mode == "block_blast":
+            block_blast()
+        elif mode == "ping_pong":
+            ping_pong()
 
 if __name__ == "__main__":
     main()
