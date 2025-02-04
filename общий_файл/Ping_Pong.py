@@ -79,6 +79,25 @@ selected_font = pygame.font.Font(None, 45)
 clock = pygame.time.Clock()
 
 game_over = False
+
+# создадим группу, содержащую все спрайты
+all_sprites = pygame.sprite.Group()
+class Bomb(pygame.sprite.Sprite):
+
+    image = pygame.image.load("bomb.png")
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Bomb.image
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randrange(WIDTH)
+        self.rect.y = random.randrange(HEIGHT)
+
+    def update(self):
+        self.rect = self.rect.move(random.randrange(3) - 1,
+                                   random.randrange(3) - 1)
+
+
 # Функция для инициализации базы данных
 def init_db():
     try:
@@ -243,8 +262,12 @@ def show_menu():
     menu = True
     selected_option = None  # Выбранный пункт меню
     current_frame = 0
+    for _ in range(15):
+        Bomb(all_sprites)
     while menu:
         screen.fill(BLACK)
+        all_sprites.draw(screen)
+        all_sprites.update()
         title_text = font.render("Выберите режим", True, WHITE)
         screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 100))
 
